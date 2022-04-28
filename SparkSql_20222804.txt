@@ -1,0 +1,24 @@
+df=(spark.read.option('header',True).option('sep',',').option('inferSchema', True).csv('owid-covid-data.csv'))
+ 
+  df.printSchema ()
+  
+  //первое задание процент переболевших 
+   df.select('iso_code','location','population','total_cases').where(F.col('date')=='2021-03-31').withColumn('PRC',F.col('total_cases')/F.col('population')*100).orderBy(F.col('PRC').desc()).select('iso_code','location','PRC') .show(15)
+
+
+
+// второе задание 
+from pyspark.sql import Window
+windowSpec  = Window.partitionBy("location").orderBy(F.col("new_cases").desc())
+df.select('continent','iso_code','date','location','new_cases').where(F.col('date')>'2021-03-24').where(F.col('date')<'2021-04-01').where(F.col('continent').isNotNull()).withColumn("row_number",F.row_number().over(windowSpec)).where(F.col('row_number')==1).orderBy(F.col('new_cases').desc()).where(F.col('location')!='World').select('date','location','new_cases').show(10)
+
+
+
+
+//третье задание
+
+windowSpec = Window.partitionBy("location").orderBy("date")
+
+df.select('date','location','new_cases').where(F.col('location')=='Russia').where(F.col('date')>'2021-03-23').where(F.col('date')<'2021-04-01').withColumn("lag",F.lag("new_cases",1).over(windowSpec)).withColumn('delta',F.col('new_cases')-F.col('lag')).where(F.col('date')>'2021-03-24').show()
+
+
